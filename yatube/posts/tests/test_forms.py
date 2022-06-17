@@ -1,7 +1,7 @@
 import shutil
 import tempfile
 
-from ..models import Post, Group, User, Comments
+from ..models import Post, Group, User, Comment
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from http import HTTPStatus
@@ -151,7 +151,7 @@ class PostCreateFormTests(TestCase):
             follow=True
         )
         self.assertTrue(
-            Comments.objects.filter(
+            Comment.objects.filter(
                 text='Тестовый комментик',
             ).exists()
         )
@@ -159,7 +159,7 @@ class PostCreateFormTests(TestCase):
             reverse('posts:post_detail', kwargs={'post_id': f'{self.post.id}'})
         )
         comment_from_response = response.context.get('comments')[0]
-        comment_from_ORM = Comments.objects.get(pk=1)
+        comment_from_ORM = Comment.objects.get(pk=1)
         self.assertEqual(comment_from_response, comment_from_ORM)
 
     def test_guest_client_create_commet(self):
