@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}
+  Записи сообщества {{ slug }}
+{% endblock %}
+{% block content %}
+  <h1>
+    {{ group.title }}
+  </h1>
+  <p>
+    {{ group.description }}
+  </p>
+  {% for post in page_obj %}
+    {% include 'includes/posts_card.html' %}
+    {% if not forloop.last %}<hr>{% endif %}
+  {% endfor %}
+  {% include 'includes/paginator.html' %}
+{% endblock %}
