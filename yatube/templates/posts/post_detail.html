@@ -37,9 +37,12 @@
       <article class="col-12 col-md-9">
         <p>{{ post.text }}</p>
       </article>
-
+        {% if post.author.username == user.get_username %}
+          <form action="{% url 'posts:post_edit' post.pk %}">
+            <button class="btn btn-primary" >Редактировать</button>
+          </form>
+        {% endif %}
         {% load user_filters %}
-
         {% if user.is_authenticated %}
           <div class="card my-4" style="width: 40vw">
             <h5 class="card-header">Добавить комментарий:</h5>
@@ -54,7 +57,6 @@
             </div>
           </div>
         {% endif %}
-
         {% for comment in comments %}
           <div class="media mb-4">
             <div class="media-body">
@@ -69,7 +71,6 @@
               </div>
             </div>
         {% endfor %} 
-
     </div> 
   </main>
 {% endblock %}

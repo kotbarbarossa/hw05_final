@@ -5,35 +5,18 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django import forms
-
-from posts.models import Post, Group
+from http import HTTPStatus
+from posts.models import Post, Group, Comment
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.conf import settings
 from django.core.cache import cache
+import os.path
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
-
 
 User = get_user_model()
 
 POSTS_LIMIT: int = 10
-
-templates_pages_names = {
-    reverse('posts:index'): 'posts/index.html',
-    reverse(
-        'posts:group_list', kwargs={'slug': 'slug1_test'}
-    ): 'posts/group_list.html',
-    reverse(
-        'posts:profile', kwargs={'username': 'auth'}
-    ): 'posts/profile.html',
-    reverse(
-        'posts:post_detail', kwargs={'post_id': '1'}
-    ): 'posts/post_detail.html',
-    reverse('posts:post_create'): 'posts/create_post.html',
-    reverse(
-        'posts:post_edit', kwargs={'post_id': '1'}
-    ): 'posts/create_post.html',
-}
 
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
@@ -41,16 +24,36 @@ class PostPagesTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create_user(username='auth')
+        cls.user = User.objects.create_user(username='Neo')
         cls.group = Group.objects.create(
-            title='Тестовая группа 1',
-            slug='slug1_test',
-            description='Тестовое описание 1',
+            title='Исследователи Матрицы',
+            slug='Matrix',
+            description='Группа искателей Морфеуса',
         )
         cls.post = Post.objects.create(
             author=cls.user,
-            text='111111111111111111111222222222221111111',
+            text='Нужно следовать за белым кроликом',
         )
+        cls.templates_pages_names = {
+            reverse('posts:index'): 'posts/index.html',
+            reverse(
+                'posts:group_list',
+                kwargs={'slug': f'{PostPagesTests.group.slug}'}
+            ): 'posts/group_list.html',
+            reverse(
+                'posts:profile',
+                kwargs={'username': f'{PostPagesTests.user.username}'}
+            ): 'posts/profile.html',
+            reverse(
+                'posts:post_detail',
+                kwargs={'post_id': f'{PostPagesTests.post.id}'}
+            ): 'posts/post_detail.html',
+            reverse('posts:post_create'): 'posts/create_post.html',
+            reverse(
+                'posts:post_edit',
+                kwargs={'post_id': f'{PostPagesTests.post.id}'}
+            ): 'posts/create_post.html',
+        }
 
     @classmethod
     def tearDownClass(cls):
@@ -62,14 +65,14 @@ class PostPagesTests(TestCase):
         self.author = self.user
         self.authorized_author = Client()
         self.authorized_author.force_login(self.author)
-        self.user_authorized = User.objects.create_user(username='HasNoName')
+        self.user_authorized = User.objects.create_user(username='Morpheus')
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user_authorized)
 
     def test_pages_namespace_uses_correct_template(self):
         """Проверка использования правильного темплейта"""
         cache.clear()
-        for reverse_name, template in templates_pages_names.items():
+        for reverse_name, template in self.templates_pages_names.items():
             with self.subTest(reverse_name=reverse_name):
                 response = self.authorized_author.get(reverse_name)
                 self.assertTemplateUsed(response, template)
@@ -94,7 +97,7 @@ class PostPagesTests(TestCase):
         posts_list = []
         for _ in range(15):
             post = Post(
-                text='Text',
+                text='Агент Смит копирует сам себя',
                 author=self.user,
                 group=self.group,
                 image=uploaded
@@ -108,14 +111,17 @@ class PostPagesTests(TestCase):
         first_object = response.context['page_obj'][0]
         task_text_0 = first_object.text
         task_image_0 = first_object.image
-        self.assertEqual(task_text_0, 'Text')
+        self.assertEqual(task_text_0, 'Агент Смит копирует сам себя')
         self.assertTrue(task_image_0)
 
         response = self.guest_client.get(
-            reverse('posts:group_list', kwargs={'slug': 'slug1_test'})
+            reverse(
+                'posts:group_list',
+                kwargs={'slug': f'{PostPagesTests.group.slug}'}
+            )
         )
         Page = response.context['page_obj']
-        group = Group.objects.get(slug='slug1_test')
+        group = Group.objects.get(slug=f'{PostPagesTests.group.slug}')
         self.assertEqual(
             Page.object_list,
             list(group.posts.select_related('author'))[:POSTS_LIMIT]
@@ -123,14 +129,17 @@ class PostPagesTests(TestCase):
         first_object = response.context['page_obj'][0]
         task_text_0 = first_object.text
         task_image_0 = first_object.image
-        self.assertEqual(task_text_0, 'Text')
+        self.assertEqual(task_text_0, 'Агент Смит копирует сам себя')
         self.assertTrue(task_image_0)
 
         response = self.guest_client.get(
-            reverse('posts:profile', kwargs={'username': 'auth'})
+            reverse(
+                'posts:profile',
+                kwargs={'username': f'{PostPagesTests.user.username}'}
+            )
         )
         Page = response.context['page_obj']
-        author = User.objects.get(username='auth')
+        author = User.objects.get(username=f'{PostPagesTests.user.username}')
         self.assertEqual(
             Page.object_list,
             list(author.author.select_related('author'))[:POSTS_LIMIT]
@@ -138,7 +147,7 @@ class PostPagesTests(TestCase):
         first_object = response.context['page_obj'][0]
         task_text_0 = first_object.text
         task_image_0 = first_object.image
-        self.assertEqual(task_text_0, 'Text')
+        self.assertEqual(task_text_0, 'Агент Смит копирует сам себя')
         self.assertTrue(task_image_0)
 
         response = self.guest_client.get(
@@ -152,7 +161,7 @@ class PostPagesTests(TestCase):
         first_object = response.context['post_list'][0]
         task_text_0 = first_object.text
         task_image_0 = first_object.image
-        self.assertEqual(task_text_0, 'Text')
+        self.assertEqual(task_text_0, 'Агент Смит копирует сам себя')
         self.assertTrue(task_image_0)
 
         response = self.authorized_author.get(
@@ -187,6 +196,10 @@ class PostPagesTests(TestCase):
                 form_field = response.context.get('form').fields.get(value)
                 self.assertIsInstance(form_field, expected)
 
+    def test_image_in_folder(self):
+        """Проверка наличия файлв изображения в папке"""
+        self.assertTrue(os.path.isfile('MEDIA/posts/small.gif'))
+
     def test_new_post_location_in_index(self):
         """Проверка поста на главной"""
         cache.clear()
@@ -197,28 +210,34 @@ class PostPagesTests(TestCase):
 
     def test_post_location_in_group_list(self):
         """Проверка поста на страницы группы"""
-        new_group = Group.objects.create(
-            title='Тестовая группа 2',
-            slug='slug2_test',
-            description='Тестовое описание 2',
+        new_group_plus = Group.objects.create(
+            title='Нашедшие Мофриуса',
+            slug='Matrix_noobie',
+            description='Группа новобранцев Морфиуса',
         )
 
-        new_post = Post.objects.create(
+        new_post_plus = Post.objects.create(
             author=self.user,
-            text='Тестовый пост 2',
-            group=new_group
+            text='Я выпил красную таблетку',
+            group=new_group_plus
         )
         response = self.authorized_author.get(
-            reverse('posts:group_list', kwargs={'slug': 'slug2_test'})
+            reverse(
+                'posts:group_list',
+                kwargs={'slug': f'{new_group_plus.slug}'}
+            )
         )
         Page = response.context['page_obj'][0]
-        post_id = Post.objects.get(pk=f'{new_post.id}')
+        post_id = Post.objects.get(pk=f'{new_post_plus.id}')
         self.assertEqual(Page, post_id)
 
     def test_post_location_in_profile(self):
         """Проверка поста в профайле"""
         response = self.authorized_author.get(
-            reverse('posts:profile', kwargs={'username': 'auth'})
+            reverse(
+                'posts:profile',
+                kwargs={'username': f'{PostPagesTests.user.username}'}
+            )
         )
         Page = response.context['page_obj'][0]
         post_id = Post.objects.get(pk=f'{self.post.id}')
@@ -227,29 +246,29 @@ class PostPagesTests(TestCase):
     def test_post_location_not_in_group_list(self):
         """Проверка отсутствия поста в другой группе"""
         new_group_2 = Group.objects.create(
-            title='Тестовая группа_2',
-            slug='slug2_test',
-            description='Тестовое описание 2',
+            title='Защитники Зеона',
+            slug='Matrix_solder',
+            description='Группа особождения Морфиуса',
         )
         new_post_2 = Post.objects.create(
             author=self.user,
-            text='Тестовый пост 2',
+            text='Сегодня я спас Морфиуса и взорвал вертолет!',
             group=new_group_2
         )
 
         new_group_3 = Group.objects.create(
-            title='Тестовая группа 3',
-            slug='slug3_test',
-            description='Тестовое описание 3',
+            title='Избранные',
+            slug='GrandMatrix',
+            description='Группа для избранных',
         )
 
         Post.objects.create(
             author=self.user,
-            text='Тестовый пост 3',
+            text='Теперь матрица в моей власти! Я уничтожу её!',
             group=new_group_3
         )
         response = self.authorized_author.get(
-            reverse('posts:group_list', kwargs={'slug': 'slug3_test'})
+            reverse('posts:group_list', kwargs={'slug': f'{new_group_3.slug}'})
         )
         Page = response.context['page_obj']
         post_id = Post.objects.get(pk=f'{new_post_2.id}')
@@ -275,14 +294,55 @@ class PostPagesTests(TestCase):
 
         self.assertNotEqual(Page_1, Page_3)
 
-    def test_follow(self):
-        self.authorized_client.get(
-            reverse('posts:profile_follow', kwargs={'username': 'auth'})
+    def test_create_comment(self):
+        """Проверка создания коментария"""
+        post = Post.objects.get(pk=PostPagesTests.post.id)
+        comment = Comment.objects.create(
+            post=self.post,
+            author=self.user_authorized,
+            text='Нео ты избранный!',
         )
         response = self.authorized_client.get(
-            reverse('posts:profile', kwargs={'username': 'auth'})
+            reverse(
+                'posts:post_detail',
+                kwargs={'post_id': PostPagesTests.post.id}
+            )
+        )
+        Page = response.context['comments'][0]
+        comment = post.comments.select_related('author')[0]
+        self.assertEqual(Page, comment)
+
+        response_guest = self.guest_client.get(
+            reverse(
+                'posts:post_detail',
+                kwargs={'post_id': PostPagesTests.post.id}
+            )
+        )
+        self.assertNotIn('form', str(response_guest.content))
+
+    def test_follow(self):
+        """Проверка подписки"""
+        self.authorized_client.get(
+            reverse(
+                'posts:profile_follow',
+                kwargs={'username': f'{PostPagesTests.user.username}'}
+            )
+        )
+        response = self.authorized_client.get(
+            reverse(
+                'posts:profile',
+                kwargs={'username': f'{PostPagesTests.user.username}'}
+            )
         )
         self.assertTrue(response.context.get('following'))
+
+        response = self.guest_client.get(
+            reverse(
+                'posts:profile_follow',
+                kwargs={'username': f'{PostPagesTests.user.username}'}
+            )
+        )
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
         response = self.authorized_client.get(reverse('posts:follow_index'))
         Page = response.context['page_obj']
@@ -298,10 +358,27 @@ class PostPagesTests(TestCase):
         post_id = Post.objects.get(pk=f'{self.post.id}')
         self.assertNotIn(post_id, list(Page))
 
+        response = self.guest_client.get(reverse('posts:follow_index'))
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+
         self.authorized_client.get(
-            reverse('posts:profile_unfollow', kwargs={'username': 'auth'})
+            reverse(
+                'posts:profile_unfollow',
+                kwargs={'username': f'{PostPagesTests.user.username}'}
+            )
         )
         response = self.authorized_client.get(
-            reverse('posts:profile', kwargs={'username': 'auth'})
+            reverse(
+                'posts:profile',
+                kwargs={'username': f'{PostPagesTests.user.username}'}
+            )
         )
         self.assertFalse(response.context.get('following'))
+
+        response = self.guest_client.get(
+            reverse(
+                'posts:profile_unfollow',
+                kwargs={'username': f'{PostPagesTests.user.username}'}
+            )
+        )
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)

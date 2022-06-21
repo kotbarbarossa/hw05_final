@@ -146,8 +146,18 @@ def add_comment(request, post_id):
             comment.save()
         return redirect('posts:post_detail', post_id=post_id)
     template = 'posts/post_detail.html'
+    post = Post.objects.get(pk=post_id)
+    username = post.author
+    post_list = Post.objects.select_related(
+        'author').filter(author__username=username)
+    comments = post.comments.select_related(
+        'author')
     context = {
-        'form': PostForm(),
+        'title': post.text[:30],
+        'post': post,
+        'post_list': post_list,
+        'form': CommentForm(),
+        'comments': comments,
     }
     return render(request, template, context)
 

@@ -5,35 +5,35 @@
 {% block content %}
   <main>
     <div class="mb-5">       
-    <h1>Все посты пользователя {{ author }} </h1>
-    <h3>Всего постов: {{ post_list.count }} </h3>
-
+      <h1>Все посты пользователя {{ author }} </h1>
+      <h3>Всего постов: {{ post_list.count }} </h3>
+    </div>
     {% if following %}
-    <a
-      class="btn btn-lg btn-light"
-      href="{% url 'posts:profile_unfollow' username %}" role="button"
-    >
-      Отписаться
-    </a>
-  {% else %}
+      <a
+        class="btn btn-lg btn-light"
+        href="{% url 'posts:profile_unfollow' username %}" role="button"
+      >
+        Отписаться
+      </a>
+    {% else %}
       <a
         class="btn btn-lg btn-primary"
         href="{% url 'posts:profile_follow' username %}" role="button"
       >
         Подписаться
       </a>
-   {% endif %}   
-   <div class="container py-5"> 
-    {% for post in page_obj %}
-      {% include 'includes/posts_card.html' %}
-      <a href="{% url 'posts:post_detail' post.pk %}">подробная информация </a>
-      <br>
-      {% if post.group %}
-        <a href="{% url 'posts:group_list' post.group.slug %}">все записи группы </a>
-      {% endif %}
-    {% if not forloop.last %}<hr>{% endif %}
-    {% endfor %}
-    {% include 'includes/paginator.html' %}
-  </div>
+    {% endif %}   
+      <div class="container py-5"> 
+        {% for post in page_obj %}
+        {% include 'includes/posts_card.html' %}
+          <a href="{% url 'posts:post_detail' post.pk %}">подробная информация </a>
+          <br>
+        {% if post.group %}
+          <a href="{% url 'posts:group_list' post.group.slug %}">все записи группы </a>
+        {% endif %}
+        {% if not forloop.last %}<hr>{% endif %}
+        {% endfor %}
+        {% include 'includes/paginator.html' %}
+      </div>
   </main>
 {% endblock %}

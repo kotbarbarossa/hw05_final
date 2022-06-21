@@ -16,15 +16,15 @@ class PostCreateFormTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create_user(username='auth')
+        cls.user = User.objects.create_user(username='Neo')
         cls.group = Group.objects.create(
-            title='Тестовая группа',
-            slug='slug_test',
-            description='Тестовое описание',
+            title='Исследователи Матрицы',
+            slug='Matrix',
+            description='Группа искателей Морфеуса',
         )
         cls.post = Post.objects.create(
             author=cls.user,
-            text='Тестовый текст пост',
+            text='Нужно следовать за белым кроликом',
         )
 
     @classmethod
@@ -37,7 +37,7 @@ class PostCreateFormTests(TestCase):
         self.author = self.user
         self.authorized_author = Client()
         self.authorized_author.force_login(self.author)
-        self.user_authorized = User.objects.create_user(username='HasNoName')
+        self.user_authorized = User.objects.create_user(username='Morpheus')
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user_authorized)
 
@@ -60,7 +60,7 @@ class PostCreateFormTests(TestCase):
         )
 
         form_data = {
-            'text': 'Тестовый новейший текст',
+            'text': 'Фото секретных кодов Зеона',
             'group': '',
             'image': uploaded,
         }
@@ -73,13 +73,13 @@ class PostCreateFormTests(TestCase):
             response,
             reverse(
                 'posts:profile',
-                kwargs={'username': 'auth'}
+                kwargs={'username': f'{PostCreateFormTests.user.username}'}
             )
         )
         self.assertEqual(Post.objects.count(), posts_count + 1)
         self.assertTrue(
             Post.objects.filter(
-                text='Тестовый новейший текст',
+                text='Фото секретных кодов Зеона',
             ).exists()
         )
 
@@ -94,12 +94,12 @@ class PostCreateFormTests(TestCase):
 
         Post.objects.update(
             author=self.user,
-            text='новый',
+            text='Я пошел за кроликом и встретил Тринити',
             id=self.post.id
         )
 
         form_data = {
-            'text': 'новый',
+            'text': 'Я пошел за кроликом и встретил Тринити',
             'group': ''
         }
         response = self.authorized_author.post(
@@ -117,7 +117,7 @@ class PostCreateFormTests(TestCase):
 
         self.assertTrue(
             Post.objects.filter(
-                text='новый',
+                text='Я пошел за кроликом и встретил Тринити',
             ).exists()
         )
 
@@ -152,7 +152,7 @@ class PostCreateFormTests(TestCase):
         )
         self.assertTrue(
             Comment.objects.filter(
-                text='Тестовый комментик',
+                text=form_data.get('text'),
             ).exists()
         )
         response = self.authorized_client.get(
