@@ -196,9 +196,10 @@ class PostPagesTests(TestCase):
                 form_field = response.context.get('form').fields.get(value)
                 self.assertIsInstance(form_field, expected)
 
-    def test_image_in_folder(self):
+    def test_ximage_in_folder(self):
         """Проверка наличия файлв изображения в папке"""
-        self.assertTrue(os.path.isfile('MEDIA/posts/small.gif'))
+        self.assertTrue(os.path.isfile(
+            f'{settings.MEDIA_ROOT}/posts/small.gif'))
 
     def test_new_post_location_in_index(self):
         """Проверка поста на главной"""
