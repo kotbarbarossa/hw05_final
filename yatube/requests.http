@@ -1,0 +1,21 @@
+# пример GET запроса
+GET https://jsonplaceholder.typicode.com/posts/1 
+
+###
+
+POST https://jsonplaceholder.typicode.com/posts
+Content-Type: application/json
+
+{
+    "title": "My Title",
+    "body": "My text",
+    "userId": 1
+} 
+
+###
+
+GET https://api.github.com/users/kotbarbarossa
+
+###
+
+GET https://api.github.com/users/kotbarbarossa/repos
